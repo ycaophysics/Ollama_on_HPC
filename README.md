@@ -57,13 +57,11 @@ which ollama
 ```
 ### 5. Set OLLAMA_MODELS Directory to $SCRATCH
 By default, Ollama tries to store models in ~/.ollama/models, which may exceed $HOME quota. Instead, point it to $SCRATCH:
-
-bash
-Copy code
+```
 mkdir -p /pscratch/sd/y/ycao910/Ollama/models
 echo 'export OLLAMA_MODELS="/pscratch/sd/y/<user_id>/Ollama/models"' >> ~/.bashrc
 source ~/.bashrc
-
+```
 ### 6. Start Ollama
 Before downloading models, start the Ollama server (in the same session where OLLAMA_MODELS is set):
 ```
@@ -86,12 +84,10 @@ This should now store the model in /pscratch/sd/y/<user_id>/Ollama/models instea
 
 Run a quick test:
 ```
-bash
-Copy code
 ollama run llama3.3 "Hello, how can I optimize Python code for HPC?"
 ```
 
-8. Custom Instructions (System Prompt)
+### 8. Custom Instructions (System Prompt)
 To customize instructions or the “system” message, create a Modelfile in Ollama DSL (not YAML) format, for example:
 ```
 cat > custom_llama.Modelfile <<EOF

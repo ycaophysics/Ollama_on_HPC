@@ -58,7 +58,7 @@ which ollama
 ### 5. Set OLLAMA_MODELS Directory to $SCRATCH
 By default, Ollama tries to store models in ~/.ollama/models, which may exceed $HOME quota. Instead, point it to $SCRATCH:
 ```
-mkdir -p /pscratch/sd/y/ycao910/Ollama/models
+mkdir -p /pscratch/sd/y/<user_id>/Ollama/models
 echo 'export OLLAMA_MODELS="/pscratch/sd/y/<user_id>/Ollama/models"' >> ~/.bashrc
 source ~/.bashrc
 ```

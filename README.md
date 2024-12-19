@@ -1,150 +1,134 @@
-# Running Ollama on NERSC Perlmutter
-This guide provides a step-by-step process for installing and running Ollama in a user-space environment on NERSC’s Perlmutter supercomputer. Since Perlmutter’s HPC environment doesn’t allow sudo or user-managed systemd services, you’ll install and run Ollama entirely in your home or scratch directories, using your user environment.
+# Installing and Running Ollama on NERSC Perlmutter
 
-Prerequisites
-NERSC Account & Access to Perlmutter: You need an active NERSC account and SSH access to Perlmutter.
-No sudo: Installation is done in user space.
-No systemd Services: You will run ollama serve manually.
-GPU Access: If you plan to use GPUs, request a compute node allocation (salloc) and ensure CUDA is available.
-Choosing an Installation Directory
-Perlmutter’s home directory ($HOME) has limited quota (~20GB), which may not be sufficient for large model files. It’s recommended to use $SCRATCH or CFS for storage-intensive installations.
+This guide provides step-by-step instructions for installing and running [Ollama](https://ollama.ai) on NERSC’s Perlmutter system. Since Perlmutter is a shared HPC environment with no `sudo` access and no user-level systemd, we will perform a user-space installation and configure Ollama to store models in `$SCRATCH`.
 
-For this example, we’ll use $SCRATCH:
+## Prerequisites
 
-bash
-Copy code
-mkdir -p /pscratch/sd/y/ycao910/Ollama
-cd /pscratch/sd/y/ycao910/Ollama
-Installing Ollama in User Space
-Download Ollama (Linux AMD64, for x86_64 front-ends):
+- **NERSC Account & Environment:**  
+  Ensure you have an active NERSC account and can log into Perlmutter.
+  
+- **HPC Considerations:**  
+  - You don’t have `sudo` privileges.
+  - No `systemd` services for users.
+  - Models and data should be stored in `$SCRATCH` due to limited `$HOME` quota.
+  
+- **GPU Acceleration:**  
+  Perlmutter provides NVIDIA A100 GPUs. Ollama supports GPU acceleration, so ensure you use a GPU node and the CUDA environment.
 
-bash
-Copy code
+## Steps
+
+### 1. Allocate a GPU Node (Optional for Testing)
+To fully utilize GPUs, request an interactive compute node with GPUs:
+```bash
+salloc -N 1 -C gpu -G 4 -t 60 -A <YOUR_ACCOUNT> --qos=interactive
+module load cudatoolkit
+```
+This setup allows you to leverage Ollama’s capabilities and NERSC’s HPC infrastructure for large-scale model inference, data analysis, and research-oriented workflows.
+
+If you just want to set up Ollama on the login node (for installation only), you can skip this step. For actual model inference or pulling large models, using a compute node is recommended.
+
+### 2. Choose an Installation Directory in $SCRATCH
+Since $HOME has a small quota, install Ollama in $SCRATCH. Adjust the path as needed:
+```
+mkdir -p /pscratch/sd/y/<user_id>/Ollama
+cd /pscratch/sd/y/<user_id>/Ollama
+```
+
+### 3. Download and Extract Ollama Binaries
+Download the Linux AMD64 tarball and extract it locally:
+```
 curl -L https://ollama.com/download/ollama-linux-amd64.tgz -o ollama-linux-amd64.tgz
 tar -xzf ollama-linux-amd64.tgz
-# Move binaries and libs into a cleaner structure
-mkdir -p bin lib
-mv usr/bin/* bin/
-mv usr/lib/* lib/
-rm -r usr
-Set Your PATH:
+```
 
+This creates a usr directory with bin and lib inside.
+Now you have ollama binaries in /pscratch/sd/y/<user_id>/Ollama/bin.
+
+### 4. Update Your PATH
 Add Ollama’s bin directory to your PATH:
 
-bash
+```bash
 Copy code
-echo 'export PATH="/pscratch/sd/y/ycao910/Ollama/bin:$PATH"' >> ~/.bashrc
+echo 'export PATH="/pscratch/sd/y/<user_id>/Ollama/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
-Check that Ollama is in your path:
-
+```
+Ensure ollama is now accessible:
+```
 bash
 Copy code
 which ollama
-# Should show /pscratch/sd/y/ycao910/Ollama/bin/ollama
-CUDA Environment:
-
-Perlmutter uses NVIDIA GPUs with CUDA toolkits provided. Load CUDA if needed:
-
-bash
-Copy code
-module load cudatoolkit
-nvidia-smi
-# Should show GPU info if on a GPU node.
-Running Ollama
-Because you’ll be running on a shared HPC system:
-
-Interactive Session With GPU:
-
-Ollama benefits from GPU acceleration. Launch an interactive job on a GPU node:
-
-bash
-Copy code
-salloc -N 1 -C gpu -G 4 -t 60 -A <YOUR_PROJECT> --qos=interactive
-module load cudatoolkit
-cd /pscratch/sd/y/ycao910/Ollama
-ollama serve
-Ollama will start serving on 127.0.0.1:11434.
-
-In another terminal (with the same environment), you can verify:
-
-bash
-Copy code
-ollama -v
-If you see version info, Ollama is running.
-
-Storing Models in Scratch
-By default, Ollama stores models in ~/.ollama/models. To store them in $SCRATCH:
-
-Create a models directory in $SCRATCH:
+```
+### 5. Set OLLAMA_MODELS Directory to $SCRATCH
+By default, Ollama tries to store models in ~/.ollama/models, which may exceed $HOME quota. Instead, point it to $SCRATCH:
 
 bash
 Copy code
 mkdir -p /pscratch/sd/y/ycao910/Ollama/models
-Set the OLLAMA_MODELS environment variable before starting ollama serve:
-
-bash
-Copy code
 echo 'export OLLAMA_MODELS="/pscratch/sd/y/ycao910/Ollama/models"' >> ~/.bashrc
 source ~/.bashrc
-Check:
 
+### 6. Start Ollama
+Before downloading models, start the Ollama server (in the same session where OLLAMA_MODELS is set):
+```
 bash
 Copy code
-echo $OLLAMA_MODELS
-# should print /pscratch/sd/y/ycao910/Ollama/models
-Stop and restart ollama serve to ensure it picks up the new OLLAMA_MODELS location:
-
-bash
-Copy code
-pkill ollama
 ollama serve
-Now when you pull models:
+```
+Leave this running. Open another terminal (with the same environment setup) for the next steps.
 
+Note: On HPC systems, ollama serve runs as a foreground process. Use tmux or screen if you want to keep it running in the background.
+
+### 7. Pull and Run Models
+From another terminal, load CUDA and confirm environment:
+```
+bash
+Copy code
+module load cudatoolkit
+```
+Pull a model (e.g., llama3.3):
+```
 bash
 Copy code
 ollama pull llama3.3
-They will download into $SCRATCH instead of $HOME.
+```
+This should now store the model in /pscratch/sd/y/<user_id>/Ollama/models instead of ~/.ollama/models.
 
-Creating a Custom Model With a System Prompt
-Ollama uses a Modelfile format, not YAML, for custom model configurations. For example, to create a model with a custom system message:
+Run a quick test:
+```
+bash
+Copy code
+ollama run llama3.3 "Hello, how can I optimize Python code for HPC?"
+```
 
-Create a Modelfile (no .yaml extension, and note the instructions in uppercase):
-
+8. Custom Instructions (System Prompt)
+To customize instructions or the “system” message, create a Modelfile in Ollama DSL (not YAML) format, for example:
+```
 bash
 Copy code
 cat > custom_llama.Modelfile <<EOF
 FROM llama3.3
-
 SYSTEM """
 I am a research scientist working at the intersection of AI and high-performance computing...
-(Your entire system prompt here)
+(Your full system prompt here)
 """
 EOF
-Important:
-
-Do not use YAML syntax; follow the Modelfile instructions exactly.
-FROM and SYSTEM must be uppercase and at the start of lines.
-The system prompt goes in triple quotes.
-Create the new model:
-
+```
+Then create a new model:
+```
 bash
 Copy code
 ollama create ai4sci -f custom_llama.Modelfile
+```
 Run the custom model:
-
+```
 bash
 Copy code
-ollama run ai4sci "How can I optimize my Python code for HPC simulations?"
-Your custom system prompt will be applied automatically.
+ollama run ai4sci "How can I parallelize my simulation code on NERSC?"
+```
+You will now get responses influenced by the custom system instructions.
 
-Troubleshooting
-Disk Quota Exceeded: If you see a quota error, ensure OLLAMA_MODELS is set and ollama serve was restarted. Ollama must be started after setting OLLAMA_MODELS.
-Parsing Errors in Modelfile:
-Make sure you’re using the correct Modelfile instructions (FROM, SYSTEM, PARAMETER, etc.), no BOM, no YAML keys. Remove hidden characters or re-create the file using cat > filename method.
-Summary
-Install Ollama in $SCRATCH, no sudo needed.
-Set PATH and OLLAMA_MODELS environment variables before starting ollama serve.
-Run ollama serve in a GPU-allocated session on Perlmutter.
-Use Modelfile DSL to create custom models with a system prompt.
-Interact with Ollama via ollama run, ollama pull, and other commands from a separate terminal.
-This setup allows you to leverage Ollama’s capabilities and NERSC’s HPC infrastructure for large-scale model inference, data analysis, and research-oriented workflows.
+### 9. Notes
+Always ensure OLLAMA_MODELS is set before starting ollama serve.
+GPU access requires compute node allocation (salloc).
+$SCRATCH may be purged periodically; re-download models as needed.
+Use tmux or screen to keep ollama serve running persistently.

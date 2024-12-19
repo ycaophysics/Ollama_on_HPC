@@ -47,15 +47,12 @@ Now you have ollama binaries in /pscratch/sd/y/<user_id>/Ollama/bin.
 ### 4. Update Your PATH
 Add Ollama’s bin directory to your PATH:
 
-```bash
-Copy code
+```
 echo 'export PATH="/pscratch/sd/y/<user_id>/Ollama/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 Ensure ollama is now accessible:
 ```
-bash
-Copy code
 which ollama
 ```
 ### 5. Set OLLAMA_MODELS Directory to $SCRATCH
@@ -64,14 +61,12 @@ By default, Ollama tries to store models in ~/.ollama/models, which may exceed $
 bash
 Copy code
 mkdir -p /pscratch/sd/y/ycao910/Ollama/models
-echo 'export OLLAMA_MODELS="/pscratch/sd/y/ycao910/Ollama/models"' >> ~/.bashrc
+echo 'export OLLAMA_MODELS="/pscratch/sd/y/<user_id>/Ollama/models"' >> ~/.bashrc
 source ~/.bashrc
 
 ### 6. Start Ollama
 Before downloading models, start the Ollama server (in the same session where OLLAMA_MODELS is set):
 ```
-bash
-Copy code
 ollama serve
 ```
 Leave this running. Open another terminal (with the same environment setup) for the next steps.
@@ -81,14 +76,10 @@ Note: On HPC systems, ollama serve runs as a foreground process. Use tmux or scr
 ### 7. Pull and Run Models
 From another terminal, load CUDA and confirm environment:
 ```
-bash
-Copy code
 module load cudatoolkit
 ```
 Pull a model (e.g., llama3.3):
 ```
-bash
-Copy code
 ollama pull llama3.3
 ```
 This should now store the model in /pscratch/sd/y/<user_id>/Ollama/models instead of ~/.ollama/models.
@@ -103,8 +94,6 @@ ollama run llama3.3 "Hello, how can I optimize Python code for HPC?"
 8. Custom Instructions (System Prompt)
 To customize instructions or the “system” message, create a Modelfile in Ollama DSL (not YAML) format, for example:
 ```
-bash
-Copy code
 cat > custom_llama.Modelfile <<EOF
 FROM llama3.3
 SYSTEM """
@@ -115,14 +104,10 @@ EOF
 ```
 Then create a new model:
 ```
-bash
-Copy code
 ollama create ai4sci -f custom_llama.Modelfile
 ```
 Run the custom model:
 ```
-bash
-Copy code
 ollama run ai4sci "How can I parallelize my simulation code on NERSC?"
 ```
 You will now get responses influenced by the custom system instructions.
